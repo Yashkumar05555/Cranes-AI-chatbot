@@ -1,0 +1,6 @@
+{
+  "name": "Cranes Varsity AI Assistant",
+  "description": "AI Chatbot & Learning Assistant for Cranes Varsity with Course RAG, 6 Learning Modes, and Document Knowledge Base",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
