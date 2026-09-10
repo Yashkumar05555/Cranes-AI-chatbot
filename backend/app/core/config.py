@@ -45,12 +45,13 @@ class Settings(BaseSettings):
     storage_provider: str = "local"
     storage_path: str = "./storage"
 
-    # CORS
-    cors_origins: str = "*"
+    # CORS - env-based. Production must set specific origins, e.g. https://yourdomain.com
+    # Development default allows Vite and Express dev servers
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     @property
     def cors_origins_list(self) -> List[str]:
-        if self.cors_origins == "*":
+        if self.cors_origins.strip() == "*":
             return ["*"]
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 

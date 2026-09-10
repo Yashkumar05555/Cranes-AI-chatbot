@@ -110,12 +110,19 @@ async def get_current_user_or_guest(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     """
-    Frontend-compatible auth: if valid Bearer token present, return authenticated user.
-    If no token or empty, return deterministic guest user (for dev/frontend without auth).
-    If token present but invalid/expired, raise 401 (strict for bad tokens).
-    This allows `src/App.tsx` to work without code changes while preserving
-    authenticated user isolation when a token is provided.
+    DEVELOPMENT-ONLY guest fallback (do not use in production).
+
+    - If valid Bearer token present → return authenticated user (strict).
+    - If no token and APP_ENV != production → return deterministic guest user
+      (allows src/App.tsx unauthenticated fetch() to work without code changes).
+    - If no token and APP_ENV == production → 401 (production requires auth).
+    - If token present but invalid/expired → 401 always.
+
+    Mark: Temporary dev compatibility shim. Production must use real auth
+    (Clerk/Auth.js/Firebase) via get_current_user.
     """
+    from app.core.config import get_settings
+
     if credentials is not None and credentials.credentials:
         payload = decode_access_token(credentials.credentials)
         if payload is None:
@@ -132,5 +139,12 @@ async def get_current_user_or_guest(
         if user is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
         return user
-    # No credentials → guest fallback (dev/frontend compatibility)
+    # No credentials → dev-only guest fallback
+    settings = get_settings()
+    if settings.app_env == "production":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated - production requires Bearer token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return await get_or_create_guest_user(db)
