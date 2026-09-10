@@ -115,6 +115,14 @@ async def test_create_conversation_validation(client, user_token):
 
 
 @pytest.mark.asyncio
-async def test_unauthenticated_create(client):
+async def test_unauthenticated_create_guest(client):
+    # Frontend compatibility: unauthenticated create falls back to guest (201), not 401
     r = await client.post("/api/v1/conversations", json={"title": "NoAuth"})
+    assert r.status_code == 201
+    assert r.json()["title"] == "NoAuth"
+
+
+@pytest.mark.asyncio
+async def test_invalid_token_still_rejected(client):
+    r = await client.post("/api/v1/conversations", json={"title": "Bad"}, headers={"Authorization": "Bearer invalidtoken123"})
     assert r.status_code == 401

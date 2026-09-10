@@ -111,8 +111,16 @@ async def test_chat_user_isolation(client):
 
 
 @pytest.mark.asyncio
-async def test_chat_requires_auth(client):
+async def test_chat_anonymous_allowed_guest(client):
+    # Frontend compatibility: unauthenticated chat uses guest user (200)
     r = await client.post("/api/v1/chat", json={"message": "Hello"})
+    assert r.status_code == 200
+    assert "response" in r.json()
+
+
+@pytest.mark.asyncio
+async def test_chat_invalid_token_rejected(client):
+    r = await client.post("/api/v1/chat", json={"message": "Hello"}, headers={"Authorization": "Bearer invalidXYZ"})
     assert r.status_code == 401
 
 

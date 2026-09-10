@@ -35,14 +35,23 @@ async def test_login_invalid(client):
 
 
 @pytest.mark.asyncio
-async def test_protected_without_token(client):
+async def test_protected_without_token_guest_fallback(client):
+    # Frontend compatibility: unauthenticated requests fallback to guest user (200) instead of 401
+    # Invalid token still must be rejected with 401
     r = await client.get("/api/v1/conversations")
-    assert r.status_code == 401
+    assert r.status_code == 200
+    assert isinstance(r.json(), list)
 
 
 @pytest.mark.asyncio
 async def test_protected_with_invalid_token(client):
     r = await client.get("/api/v1/conversations", headers={"Authorization": "Bearer invalidtoken"})
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_auth_me_without_token(client):
+    r = await client.get("/api/v1/auth/me")
     assert r.status_code == 401
 
 
